@@ -5,7 +5,6 @@ import geopandas as gpd
 from shapely.geometry import shape
 
 
-# Helpers
 
 def _fix_fips_digits(val) -> str:
     """Zero-pad a FIPS code to exactly 5 digits."""
@@ -71,7 +70,6 @@ def normalize_features_to_unit_box(features: list, pad: float = 0.03) -> list:
     return out
 
 
-# Data loading
 
 def load_raw_data(
     childcare_path: str = "./data/childcare_costs.csv",
@@ -201,13 +199,11 @@ def build_geo_features(US_map_df: pd.DataFrame, state_metrics: pd.DataFrame) -> 
 
     metric_cols = ["state_id", "state_name", "mcsa_mean", "pr_f_mean", "flfpr_20to64_mean"]
     all_features = []
-
     for year, group in state_metrics.groupby("study_year"):
         merged = state_gdf_clean.merge(
             group[metric_cols], on="state_id", how="left", suffixes=("", "_dup")
         )
         merged = merged.loc[:, ~merged.columns.str.endswith("_dup")]
-
         geojson_dict = json.loads(merged.to_json())
         for feature in geojson_dict["features"]:
             feature["properties"]["study_year"] = int(year)
