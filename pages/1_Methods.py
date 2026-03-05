@@ -1,13 +1,11 @@
 import streamlit as st
 
+
 st.set_page_config(page_title="Methods", layout="wide")
 
 st.subheader("Data Source")
 st.info("Dataset: [National Database of Childcare Prices](https://github.com/rfordatascience/tidytuesday/blob/main/data/2023/2023-05-09/readme.md).")
-st.info("The primary dataset used in this analysis is the county-level childcare cost dataset made publicly available through the TidyTuesday repository. The unit of observation is the county-year level, allowing for both cross-sectional and longitudinal analysis. Each observation corresponds to a specific U.S. county in a given year between 2008 and 2018. The dataset includes detailed measures of weekly childcare prices for different age groups and care types, including center-based and family childcare arrangements. For consistency across counties and years, our primary cost measure focuses on median weekly center-based care for school-age children (mcsa). This variable serves as our central indicator of childcare pricing. To contextualize childcare costs within broader economic conditions, the dataset also includes several socioeconomic indicators derived from the American Community Survey. These include individual poverty rates (pr_p) and female labor force participation rates for individuals aged 20–64 (flfpr_20to64). These variables allow us to examine the relationship between childcare prices, economic vulnerability, and women’s labor supply. In addition, we incorporate a Rural–Urban Continuum Code (RUCC 2023) dataset to classify counties based on their degree of urbanization. Counties are categorized as Urban if their RUCC code is 3 or below and Rural otherwise. This classification enables systematic comparison between predominantly urban and predominantly rural areas.")
-st.write("- Variables used: ")
-
-
+st.write("The primary dataset used in this analysis is the county-level childcare cost dataset made publicly available through the TidyTuesday repository. The unit of observation is the county-year level, allowing for both cross-sectional and longitudinal analysis. Each observation corresponds to a specific U.S. county in a given year between 2008 and 2018. The dataset includes detailed measures of weekly childcare prices for different age groups and care types, including center-based and family childcare arrangements. For consistency across counties and years, our primary cost measure focuses on median weekly center-based care for school-age children (mcsa). This variable serves as our central indicator of childcare pricing. To contextualize childcare costs within broader economic conditions, the dataset also includes several socioeconomic indicators derived from the American Community Survey. These include individual poverty rates (pr_p) and female labor force participation rates for individuals aged 20–64 (flfpr_20to64). These variables allow us to examine the relationship between childcare prices, economic vulnerability, and women’s labor supply. In addition, we incorporate a Rural–Urban Continuum Code (RUCC 2023) dataset to classify counties based on their degree of urbanization. Counties are categorized as Urban if their RUCC code is 3 or below and Rural otherwise. This classification enables systematic comparison between predominantly urban and predominantly rural areas.")
 
 
 st.write(
@@ -60,21 +58,3 @@ Finally, our rural–urban classification is based on RUCC codes, which simplify
 )
 
 
-import streamlit as st
-from utils import data_io as io
-import charts
-
-st.set_page_config(page_title="Methods", layout="wide")
-
-st.title("Methods")
-
-@st.cache_data(show_spinner="Loading and preprocessing data…")
-def get_data():
-    return io.load_and_preprocess_all(
-        childcare_path="./data/childcare_costs.csv",
-        counties_path="./data/counties.csv",
-        rucc_path="./data/Ruralurbancontinuumcodes2023.csv",
-        geojson_path="./data/geojson-counties-fips.json",
-    )
-
-data = get_data()
