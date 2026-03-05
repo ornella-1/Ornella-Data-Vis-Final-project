@@ -386,51 +386,57 @@ def make_heatmap_stacked(county_avg: pd.DataFrame) -> alt.VConcatChart:
 
 # Interactive county-level dashboard for urban vs rural, labor force participation, and poverty rate over time
 
-def make_county_dashboard(geo_merged_json: dict) -> alt.HConcatChart:
-    """
-    Interactive three-panel dashboard driven by a year slider and a
-    state dropdown. Shows a county choropleth for the selected state
-    coloured by childcare cost, a scatter plot of cost vs poverty rate,
-    and a bar chart comparing selected county vs state average female LFPR.
-    """
+import altair as alt
+import pandas as pd
+import streamlit as st
+
+
+def make_county_dashboard(geo_merged_json: dict):
+
     alt.data_transformers.disable_max_rows()
 
     geo_features = geo_merged_json["features"]
 
-    years = sorted(set(
+    years = sorted({
         f["properties"]["study_year"]
         for f in geo_features
         if f["properties"].get("study_year") is not None
-    ))
+    })
 
-    state_names = sorted(set(
+    states = sorted({
         f["properties"]["state_name"]
         for f in geo_features
         if f["properties"].get("state_name") is not None
-    ))
+    })
 
-    # Plain DataFrame (no geometry) for all three panels
-    df_panel = pd.DataFrame([f["properties"] for f in geo_features])
+    # Streamlit controls
+    selected_year = st.slider(
+        "Year",
+        min_value=int(min(years)),
+        max_value=int(max(years)),
+        value=int(min(years)),
+        step=1
+    )
 
-    # Shared params
-    year_param = alt.param(
-        name="year_param",
-        value=min(years),
-        bind=alt.binding_range(min=min(years), max=max(years), step=1, name="Year: "),
-    )
-    state_param = alt.param(
-        name="state_param",
-        value=state_names[0],
-        bind=alt.binding_select(options=state_names, name="State: "),
-    )
+    selected_state = st.selectbox("State", states)
+
+    # Filter geo features
+    filtered_features = [
+        f for f in geo_features
+        if f["properties"]["study_year"] == selected_year
+        and f["properties"]["state_name"] == selected_state
+    ]
+
+    df_panel = pd.DataFrame([f["properties"] for f in filtered_features])
+
+    geo_data = alt.Data(values=filtered_features)
+
     county_select = alt.selection_point(fields=["county_fips_code"])
 
-    # County choropleth for selected state
+    # Choropleth
     state_map = (
-        alt.Chart(alt.Data(values=geo_features))
+        alt.Chart(geo_data)
         .mark_geoshape(stroke="#333333", strokeWidth=0.4)
-        .transform_filter("datum.properties.state_name === state_param")
-        .transform_filter("datum.properties.study_year === year_param")
         .encode(
             color=alt.Color(
                 "properties.mcsa:Q",
@@ -443,19 +449,18 @@ def make_county_dashboard(geo_merged_json: dict) -> alt.HConcatChart:
                 alt.Tooltip("properties.county_name:N", title="County"),
                 alt.Tooltip("properties.mcsa:Q", title="Avg weekly childcare cost", format=",.0f"),
                 alt.Tooltip("properties.pr_p:Q", title="Poverty rate", format=".1f"),
-                alt.Tooltip("properties.flfpr_20to64:Q", title="Female Labor Force Participation Rate", format=".1f"),
+                alt.Tooltip("properties.flfpr_20to64:Q", title="Female LFPR", format=".1f"),
             ],
         )
+        .add_params(county_select)
         .project(type="albersUsa")
         .properties(width=400, height=500)
     )
 
-    # Scatter: cost vs poverty for selected state + year
+    # Scatter plot
     scatter = (
         alt.Chart(df_panel)
         .mark_circle(size=70)
-        .transform_filter(alt.datum.state_name == state_param)
-        .transform_filter(alt.datum.study_year == year_param)
         .encode(
             x=alt.X("mcsa:Q", title="Avg weekly childcare cost"),
             y=alt.Y("pr_p:Q", title="Poverty rate"),
@@ -471,39 +476,36 @@ def make_county_dashboard(geo_merged_json: dict) -> alt.HConcatChart:
         .properties(width=350, height=300)
     )
 
-    # LFPR bars: selected county vs state average
-    lfpr_base = (
-        alt.Chart(df_panel)
-        .transform_filter(alt.datum.state_name == state_param)
-        .transform_filter(alt.datum.study_year == year_param)
-    )
-
+    # LFPR comparison
     county_bar = (
-        lfpr_base
+        alt.Chart(df_panel)
         .transform_filter(county_select)
         .transform_calculate(label='"Selected county"')
         .mark_bar()
         .encode(
             x=alt.X("label:N", title=""),
-            y=alt.Y("flfpr_20to64:Q", title="Female LFPR (20-64)"),
+            y=alt.Y("flfpr_20to64:Q", title="Female LFPR (20-64)")
         )
     )
 
     state_bar = (
-        lfpr_base
-        .transform_aggregate(state_avg="mean(flfpr_20to64)", groupby=["state_name"])
+        alt.Chart(df_panel)
+        .transform_aggregate(
+            state_avg="mean(flfpr_20to64)"
+        )
         .transform_calculate(label='"State average"')
         .mark_bar(color="orange")
         .encode(
-            x=alt.X("label:N", title=""),
-            y=alt.Y("state_avg:Q", title="Female LFPR (20–64)"),
+            x="label:N",
+            y="state_avg:Q"
         )
     )
 
     lfpr_chart = (county_bar + state_bar).properties(width=350, height=200)
 
-    return (
-        alt.hconcat(state_map, alt.vconcat(scatter, lfpr_chart))
-        .add_params(year_param, state_param)
-        .resolve_scale(color="shared")
+    dashboard = alt.hconcat(
+        state_map,
+        alt.vconcat(scatter, lfpr_chart)
     )
+
+    return dashboard
