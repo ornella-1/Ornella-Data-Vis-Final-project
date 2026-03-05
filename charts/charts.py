@@ -105,13 +105,13 @@ def make_sliding_choropleth_maps(
         bind=year_slider
     )
 
-    year_filter = alt.datum.properties.study_year == year_selection
+    year_filter = f"datum.properties.study_year == selected_year"
 
     base_map = (
         alt.Chart(geo_data)
         .mark_geoshape(stroke="white", strokeWidth=0.5)
         .encode(shape="geometry:G")
-        .transform_filter(year_filter)
+        .transform_filter("datum.properties.study_year == selected_year")
         .project(type="albersUsa")
         .properties(width=450, height=280)
     )
