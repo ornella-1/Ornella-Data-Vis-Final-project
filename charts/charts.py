@@ -64,7 +64,6 @@ def _prep_heatmap_df(county_avg: pd.DataFrame) -> pd.DataFrame:
 
 # Sliding state-level choropleth maps
 
-
 def make_sliding_choropleth_maps(
     geo_features: list,
     state_metrics: pd.DataFrame,
@@ -250,7 +249,7 @@ def make_urban_rural_state_maps(
                     alt.Tooltip("properties.NAME:N", title="County"),
                     alt.Tooltip("urbanicity_rucc:N", title="Urban/Rural"),
                     alt.Tooltip(f"{COST}:Q", title="Avg childcare cost", format=",.2f"),
-                    alt.Tooltip(f"{WLF}:Q",  title="Female Labor Force Particip. Rate (FLFPR)", format=",.2f"),
+                    alt.Tooltip(f"{WLF}:Q",  title="Female Labor Force Participation Rate (FLFPR)", format=",.2f"),
                     alt.Tooltip(f"{POV}:Q",  title="Poverty rate", format=",.2f"),
                 ],
             )
@@ -361,12 +360,10 @@ def make_heatmap_stacked(county_avg: pd.DataFrame) -> alt.VConcatChart:
 # Interactive county-level dashboard for urban vs rural, labor force participation, and poverty rate over time
 
 
-
 def make_county_dashboard(geo_merged):
 
     alt.data_transformers.disable_max_rows()
 
-    # Convert GeoDataFrame → GeoJSON dict
     if hasattr(geo_merged, "to_json"):
         geo_merged_json = json.loads(geo_merged.to_json())
     else:
@@ -390,7 +387,6 @@ def make_county_dashboard(geo_merged):
     # DataFrame for scatter + bar panels
     df_panel = pd.DataFrame([f["properties"] for f in geo_features])
 
-    # --- Shared UI parameters ---
     year_param = alt.param(
         name="year_param",
         value=min(years),
@@ -413,7 +409,7 @@ def make_county_dashboard(geo_merged):
 
     county_select = alt.selection_point(fields=["county_fips_code"])
 
-    # --- County map ---
+    # County map 
     state_map = (
     alt.Chart(alt.Data(values=geo_features))
     .mark_geoshape(stroke="#333333", strokeWidth=0.4)
@@ -447,7 +443,7 @@ def make_county_dashboard(geo_merged):
     .properties(width=400, height=500)
     )
 
-    # --- Scatter plot ---
+    #  Scatter plot 
     scatter = (
         alt.Chart(df_panel)
         .mark_circle(size=70)
@@ -468,7 +464,7 @@ def make_county_dashboard(geo_merged):
         .properties(width=350, height=300)
     )
 
-    # --- Base filtered data for LFPR chart ---
+    # Base filtered data for LFPR chart 
     lfpr_base = (
         alt.Chart(df_panel)
         .transform_filter(alt.datum.state_name == state_param)
