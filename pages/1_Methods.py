@@ -9,7 +9,6 @@ st.write("- Variables used: ")
 
 
 
-st.title("Methods & Limitations")
 
 st.write(
     """
@@ -50,7 +49,15 @@ Finally, we calculated a national time series of average childcare costs across 
 )
 
 st.subheader("Limitations")
-st.write("")
+st.write(
+    """
+The childcare dataset does not provide full coverage for every county or every year, and missing observations are especially common in rural areas and in states with smaller populations. Because of these gaps, we were unable to construct a complete national panel and instead relied on a sample of counties and states with consistent data availability. As a result, the patterns we observe—particularly in the rural–urban comparisons—reflect this sample rather than the entire United States. The conclusions are therefore not fully generalizable, though they still offer meaningful insight into how childcare costs relate to broader socioeconomic conditions.
+
+Related to this, our project is descriptive rather than causal. The visualizations are designed to help readers recognize patterns and potential relationships between childcare costs, poverty, and women’s labor force participation, but we did not conduct statistical modeling or causal inference. We can identify associations, but we cannot claim that one variable directly causes changes in another.
+
+Finally, our rural–urban classification is based on RUCC codes, which simplify a complex continuum of urbanicity and may not capture local nuance. In addition, some of our state‑level visualizations aggregate county data into statewide averages, which can obscure important within‑state variation and mask local disparities.
+"""
+)
 
 
 import streamlit as st
