@@ -246,6 +246,8 @@ def make_heatmap_stacked(county_avg: pd.DataFrame) -> alt.VConcatChart:
 
 
 def make_county_dashboard(geo_merged):
+    import altair as alt
+
     # Accept GeoDataFrame directly
     data = geo_merged
 
@@ -255,18 +257,28 @@ def make_county_dashboard(geo_merged):
     year_param = alt.param(
         name="year",
         value=min(years),
-        bind=alt.binding_range(min=min(years), max=max(years), step=1, name="Year: ")
+        bind=alt.binding_range(
+            min=min(years),
+            max=max(years),
+            step=1,
+            name="Year: "
+        )
     )
 
     state_param = alt.param(
         name="state",
         value=states[0],
-        bind=alt.binding_select(options=states, name="State: ")
+        bind=alt.binding_select(
+            options=states,
+            name="State: "
+        )
     )
 
     county_select = alt.selection_point(fields=["county_fips_code"])
 
-    # Map
+    # -----------------------
+    # MAP
+    # -----------------------
     map_chart = (
         alt.Chart(data)
         .mark_geoshape(stroke="#333", strokeWidth=0.4)
@@ -288,7 +300,9 @@ def make_county_dashboard(geo_merged):
         .properties(width=700, height=600)
     )
 
-    # Scatter
+    # -----------------------
+    # SCATTER
+    # -----------------------
     scatter = (
         alt.Chart(data)
         .mark_circle(size=70)
@@ -309,7 +323,9 @@ def make_county_dashboard(geo_merged):
         .properties(width=350, height=300)
     )
 
-    # LFPR bar chart
+    # -----------------------
+    # LFPR BAR CHART
+    # -----------------------
     lfpr_base = (
         alt.Chart(data)
         .transform_filter("datum.state_name == state")
@@ -343,6 +359,9 @@ def make_county_dashboard(geo_merged):
 
     lfpr_chart = (county_bar + state_bar).properties(width=350, height=200)
 
+    # -----------------------
+    # COMBINE
+    # -----------------------
     return alt.hconcat(
         map_chart,
         alt.vconcat(scatter, lfpr_chart)
