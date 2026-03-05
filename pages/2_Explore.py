@@ -138,6 +138,7 @@ states and counties.
 """
 )
 
+
 # IMPORTANT: pass the GeoDataFrame, NOT the JSON
 dashboard = charts.make_county_dashboard(data["geo_merged"])
 st.altair_chart(dashboard, use_container_width=False)
