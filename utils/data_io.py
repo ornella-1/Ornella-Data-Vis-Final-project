@@ -179,44 +179,39 @@ def build_state_metrics(data_merged: pd.DataFrame) -> pd.DataFrame:
 
 def build_geo_features(US_map_df: pd.DataFrame, state_metrics: pd.DataFrame) -> list:
     """
-    Build state-level GeoJSON features with metrics for each year.
+    Dissolve county geometries to state level, merge with state_metrics, and
+    return a flat list of GeoJSON features with mcsa_mean, pr_f_mean, flfpr_20to64_mean.
     """
-
     gdf = gpd.GeoDataFrame(
         US_map_df[["county_name", "county_fips_code", "county_id", "state_id"]],
         geometry=US_map_df["geometry"].apply(shape),
         crs="EPSG:4326",
     )
 
-    # dissolve counties into states
     state_gdf = gdf.dissolve(by="state_id").reset_index()
     state_gdf["state_id"] = state_gdf["state_id"].astype(str).str.zfill(2)
+    state_gdf_clean = state_gdf[["state_id", "geometry"]].copy()
 
-    # attach state names
     state_name_lookup = (
         state_metrics[["state_id", "state_name"]]
         .drop_duplicates()
         .dropna(subset=["state_name"])
     )
+    state_gdf_clean = state_gdf_clean.merge(state_name_lookup, on="state_id", how="left")
 
-    state_gdf = state_gdf.merge(state_name_lookup, on="state_id", how="left")
-
+    metric_cols = ["state_id", "state_name", "mcsa_mean", "pr_f_mean", "flfpr_20to64_mean"]
     all_features = []
 
     for year, group in state_metrics.groupby("study_year"):
-
-        merged = state_gdf.merge(
-            group[["state_id", "mcsa_mean", "pr_f_mean", "flfpr_20to64_mean"]],
-            on="state_id",
-            how="left",
+        merged = state_gdf_clean.merge(
+            group[metric_cols], on="state_id", how="left", suffixes=("", "_dup")
         )
+        merged = merged.loc[:, ~merged.columns.str.endswith("_dup")]
 
-        merged["study_year"] = int(year)
-
-        geojson = json.loads(merged.to_json())
-
-        for f in geojson["features"]:
-            all_features.append(f)
+        geojson_dict = json.loads(merged.to_json())
+        for feature in geojson_dict["features"]:
+            feature["properties"]["study_year"] = int(year)
+            all_features.append(feature)
 
     return all_features
 
