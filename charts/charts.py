@@ -442,40 +442,36 @@ def make_county_dashboard(geo_merged):
 
     # --- County map ---
     state_map = (
-        alt.Chart(alt.Data(values=geo_features))
-        .mark_geoshape(stroke="#333333", strokeWidth=0.4)
-        .transform_filter("datum.properties.state_name === state_param")
-        .transform_filter("datum.properties.study_year === year_param")
-        .encode(
-            color=alt.Color(
-                "properties.mcsa:Q",
-                title="Childcare cost",
-                scale=alt.Scale(scheme="blues", reverse=True),
-            ),
-            opacity=alt.condition(county_select, alt.value(1.0), alt.value(0.5)),
-            tooltip=[
-                alt.Tooltip("properties.state_name:N", title="State"),
-                alt.Tooltip("properties.county_name:N", title="County"),
-                alt.Tooltip(
-                    "properties.mcsa:Q",
-                    title="Avg weekly childcare cost",
-                    format=",.0f",
-                ),
-                alt.Tooltip(
-                    "properties.pr_p:Q",
-                    title="Poverty rate",
-                    format=".1f",
-                ),
-                alt.Tooltip(
-                    "properties.flfpr_20to64:Q",
-                    title="Female LFPR",
-                    format=".1f",
-                ),
-            ],
-        )
-        .add_params(county_select)
-        .project(type="albersUsa")
-        .properties(width=400, height=500)
+    alt.Chart(alt.Data(values=geo_features))
+    .mark_geoshape(stroke="#333333", strokeWidth=0.4)
+    .transform_filter("datum.properties.state_name === state_param")
+    .transform_filter("datum.properties.study_year === year_param")
+    .transform_calculate(
+        county_fips_code="datum.properties.county_fips_code",
+        county_name="datum.properties.county_name",
+        state_name="datum.properties.state_name",
+        mcsa="datum.properties.mcsa",
+        pr_p="datum.properties.pr_p",
+        flfpr_20to64="datum.properties.flfpr_20to64"
+    )
+    .encode(
+        color=alt.Color(
+            "mcsa:Q",
+            title="Childcare cost",
+            scale=alt.Scale(scheme="blues", reverse=True),
+        ),
+        opacity=alt.condition(county_select, alt.value(1.0), alt.value(0.5)),
+        tooltip=[
+            alt.Tooltip("state_name:N", title="State"),
+            alt.Tooltip("county_name:N", title="County"),
+            alt.Tooltip("mcsa:Q", title="Avg weekly childcare cost", format=",.0f"),
+            alt.Tooltip("pr_p:Q", title="Poverty rate", format=".1f"),
+            alt.Tooltip("flfpr_20to64:Q", title="Female LFPR", format=".1f"),
+        ],
+    )
+    .add_params(county_select)
+    .project(type="albersUsa")
+    .properties(width=400, height=500)
     )
 
     # --- Scatter plot ---
